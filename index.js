@@ -7,7 +7,7 @@ exports.find = find;
 function find (base, cb) {
     var em = new EventEmitter;
     
-    (function find (dir, f) {
+    function finder (dir, f) {
         Seq()
             .seq(fs.readdir, dir, Seq)
             .flatten()
@@ -26,7 +26,7 @@ function find (base, cb) {
                 
                 if (stat.isDirectory()) {
                     em.emit('directory', file, stat);
-                    find(file, this);
+                    finder(file, this);
                 }
                 else {
                     em.emit('file', file, stat);
@@ -36,7 +36,20 @@ function find (base, cb) {
             .seq(f.bind({}, null))
             .catch(em.emit.bind(em, 'error'))
         ;
-    })(base, em.emit.bind(em, 'end'));
+    }
+    
+    fs.stat(base, function (err, s) {
+        if (err) {
+            em.emit('error', err);
+        }
+        else if (s.isDirectory()) {
+            finder(base, em.emit.bind(em, 'end'));
+        }
+        else {
+            em.emit('file', base);
+            em.emit('end');
+        }
+    });
     
     return em;
 };

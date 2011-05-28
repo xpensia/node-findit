@@ -44,6 +44,9 @@ Do an asynchronous recursive walk starting at `basedir`.
 Optionally supply a callback that will get the same arguments as the path event
 documented below in "events".
 
+If `basedir` is actually a non-directory regular file, findit emits a single
+"file" event for it then emits "end".
+
 Returns an EventEmitter. See "events".
 
 findSync(basedir)
