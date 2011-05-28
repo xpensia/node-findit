@@ -9,28 +9,34 @@ example time!
 callback style
 --------------
 
-    require('findit').find(__dirname, function (file) {
-        console.log(file);
-    })
+````javascript
+require('findit').find(__dirname, function (file) {
+    console.log(file);
+})
+````
 
 emitter style
 -------------
 
-    var finder = require('findit').find(__dirname);
-    
-    finder.on('directory', function (dir) {
-        console.log(dir + '/');
-    });
-    
-    finder.on('file', function (file) {
-        console.log(file);
-    });
+````javascript
+var finder = require('findit').find(__dirname);
+
+finder.on('directory', function (dir) {
+    console.log(dir + '/');
+});
+
+finder.on('file', function (file) {
+    console.log(file);
+});
+````
 
 synchronous
 -----------
 
-    var files = require('findit').findSync(__dirname);
+````javascript
+var files = require('findit').findSync(__dirname);
     console.dir(files);
+````
 
 methods
 =======
