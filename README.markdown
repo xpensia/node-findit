@@ -67,12 +67,17 @@ events
 file: [ file, stat ]
 --------------------
 
-Emitted for just files which are not directories.
+Emitted for just files which are not directories (including symlinks).
 
 directory : [ directory, stat ]
 -------------------------------
 
-Emitted for directories.
+Emitted for directories (including symlinks).
+
+link : [ file, stat ]
+---------------------
+
+Emitted for symlinks. A "file" or "directory" event is also emitted.
 
 path : [ file, stat ]
 ---------------------
