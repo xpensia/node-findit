@@ -23,26 +23,25 @@ function find (base, cb) {
             .seqEach(function (file) {
                 var stat = this.vars[file];
                 if (cb) cb(file, stat);
-                em.emit('path', file, stat);
-                
-                if (stat.isSymbolicLink()) {
-                    em.emit('link', file, stat);
-                }
                 
                 if (inodes[stat.ino]) {
                     // already seen this inode, probably a recursive symlink
                     this(null);
                 }
-                else if (stat.isDirectory()) {
-                    em.emit('directory', file, stat);
-                    finder(file, this);
-                }
                 else {
-                    em.emit('file', file, stat);
-                    this(null);
+                    em.emit('path', file, stat);
+                    
+                    if (stat.isDirectory()) {
+                        em.emit('directory', file, stat);
+                        finder(file, this);
+                    }
+                    else {
+                        em.emit('file', file, stat);
+                        this(null);
+                    }
+                    
+                    inodes[stat.ino] = true;
                 }
-                
-                inodes[stat.ino] = true;
             })
             .seq(f.bind({}, null))
             .catch(em.emit.bind(em, 'error'))

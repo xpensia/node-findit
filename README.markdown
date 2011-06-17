@@ -53,6 +53,10 @@ documented below in "events".
 If `basedir` is actually a non-directory regular file, findit emits a single
 "file" event for it then emits "end".
 
+Findit uses `fs.stat()` so symlinks are traversed automatically. Findit won't
+traverse an inode that it has seen before so directories can have symlink cycles
+and findit won't blow up.
+
 Returns an EventEmitter. See "events".
 
 findSync(basedir)
@@ -67,17 +71,12 @@ events
 file: [ file, stat ]
 --------------------
 
-Emitted for just files which are not directories (including symlinks).
+Emitted for just files which are not directories.
 
 directory : [ directory, stat ]
 -------------------------------
 
-Emitted for directories (including symlinks).
-
-link : [ file, stat ]
----------------------
-
-Emitted for symlinks. A "file" or "directory" event is also emitted.
+Emitted for directories.
 
 path : [ file, stat ]
 ---------------------

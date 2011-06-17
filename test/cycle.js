@@ -1,21 +1,21 @@
 var assert = require('assert');
-var findit = require('findit');
+var findit = require('../');
 var Hash = require('hashish');
 
 exports.cycle = function () {
     var find = findit.find(__dirname + '/cycle');
-    var found = { directory : [], link : [], file : [] };
+    var found = { directory : [], file : [], path : [] };
     
-    find.on('directory', function (dir, stat) {
+    find.on('directory', function (dir) {
         found.directory.push(dir);
     });
     
-    find.on('link', function () {
-        found.link.push(dir);
+    find.on('file', function (file) {
+        found.file.push(file);
     });
     
-    find.on('file', function (file) {
-        found.file.push(dir);
+    find.on('path', function (file) {
+        found.path.push(file);
     });
     
     var to = setTimeout(function () {
@@ -26,8 +26,8 @@ exports.cycle = function () {
         clearTimeout(to);
         var dirs = Hash.map({
             directory : [ 'meep', 'meep/moop' ],
-            link : [ 'meep/moop' ],
-            file : []
+            file : [],
+            path : [ 'meep', 'meep/moop' ]
         }, function (x) {
             return x.map(function (dir) {
                 return __dirname + '/cycle/' + dir
@@ -35,5 +35,7 @@ exports.cycle = function () {
         });
         
         assert.deepEqual(dirs.directory, found.directory);
+        assert.deepEqual(dirs.file, found.file);
+        assert.deepEqual(dirs.path, found.path);
     });
 };
