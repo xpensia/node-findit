@@ -1,12 +1,12 @@
 var assert = require('assert');
 var findit = require('findit');
+var Hash = require('hashish');
 
 exports.cycle = function () {
     var find = findit.find(__dirname + '/cycle');
     var found = { directory : [], link : [], file : [] };
     
     find.on('directory', function (dir, stat) {
-        assert.ok(stat.isSymbolicLink());
         found.directory.push(dir);
     });
     
@@ -24,11 +24,16 @@ exports.cycle = function () {
     
     find.on('end', function () {
         clearTimeout(to);
-        
-        assert.deepEqual(found, {
+        var dirs = Hash.map({
             directory : [ 'meep', 'meep/moop' ],
             link : [ 'meep/moop' ],
             file : []
+        }, function (x) {
+            return x.map(function (dir) {
+                return __dirname + '/cycle/' + dir
+            })
         });
+        
+        assert.deepEqual(dirs.directory, found.directory);
     });
 };

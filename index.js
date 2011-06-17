@@ -6,6 +6,7 @@ exports = module.exports = find;
 exports.find = find;
 function find (base, cb) {
     var em = new EventEmitter;
+    var inodes = {};
     
     function finder (dir, f) {
         Seq()
@@ -24,7 +25,15 @@ function find (base, cb) {
                 if (cb) cb(file, stat);
                 em.emit('path', file, stat);
                 
-                if (stat.isDirectory()) {
+                if (stat.isSymbolicLink()) {
+                    em.emit('link', file, stat);
+                }
+                
+                if (inodes[stat.ino]) {
+                    // already seen this inode, probably a recursive symlink
+                    this(null);
+                }
+                else if (stat.isDirectory()) {
                     em.emit('directory', file, stat);
                     finder(file, this);
                 }
@@ -32,6 +41,8 @@ function find (base, cb) {
                     em.emit('file', file, stat);
                     this(null);
                 }
+                
+                inodes[stat.ino] = true;
             })
             .seq(f.bind({}, null))
             .catch(em.emit.bind(em, 'error'))
