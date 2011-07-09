@@ -34,7 +34,7 @@ synchronous
 -----------
 
 ````javascript
-var files = require('findit').findSync(__dirname);
+var files = require('findit').sync(__dirname);
     console.dir(files);
 ````
 
@@ -59,11 +59,13 @@ and findit won't blow up.
 
 Returns an EventEmitter. See "events".
 
-findSync(basedir)
+sync(basedir, cb)
 -----------------
 
-Return an array of files and directories from a recursive walk starting at
-`basedir`.
+Return an array of files and directories from a synchronous recursive walk
+starting at `basedir`.
+
+An optional callback `cb` will get called with `cb(file, stat)` if specified.
 
 events
 ======
