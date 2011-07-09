@@ -1,5 +1,5 @@
 var assert = require('assert');
-var find = require('findit');
+var find = require('../');
 
 exports.module = function () {
     assert.eql(find.findSync, find.find.sync);

@@ -1,6 +1,6 @@
 var assert = require('assert');
-var find = require('findit').find;
-var findSync = require('findit').findSync;
+var find = require('../').find;
+var findSync = require('../').findSync;
 
 exports.foo = function () {
     var to = setTimeout(function () {

@@ -64,22 +64,25 @@ function find (base, cb) {
     return em;
 };
 
-exports.findSync = function findSync (dir) {
-    if (!fs.statSync(dir).isDirectory()) return [dir];
+exports.findSync = function findSync (dir, cb) {
+    var rootStat = fs.statSync(dir);
+    if (!rootStat.isDirectory()) {
+        if (cb) cb(dir, rootStat);
+        return [dir];
+    }
     
-    return fs.readdirSync(dir)
-        .reduce(function (files, file) {
-            var p = dir + '/' + file;
-            var stat = fs.statSync(p);
-            files.push(p);
-            
-            if (stat.isDirectory()) {
-                files.push.apply(files, findSync(p));
-            }
-            
-            return files;
-        }, [])
-    ;
+    return fs.readdirSync(dir).reduce(function (files, file) {
+        var p = dir + '/' + file;
+        var stat = fs.statSync(p);
+        if (cb) cb(file, stat);
+        files.push(p);
+        
+        if (stat.isDirectory()) {
+            files.push.apply(files, findSync(p, cb));
+        }
+        
+        return files;
+    }, []);
 };
 
 exports.find.sync = exports.findSync;
