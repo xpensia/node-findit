@@ -74,7 +74,7 @@ exports.findSync = function findSync (dir, cb) {
     return fs.readdirSync(dir).reduce(function (files, file) {
         var p = dir + '/' + file;
         var stat = fs.statSync(p);
-        if (cb) cb(file, stat);
+        if (cb) cb(p, stat);
         files.push(p);
         
         if (stat.isDirectory()) {
