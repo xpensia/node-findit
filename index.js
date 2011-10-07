@@ -14,7 +14,7 @@ function find (base, cb) {
             .flatten()
             .seqEach(function (file) {
                 var p = dir + '/' + file;
-                fs.stat(p, this.into(p));
+                fs.lstat(p, this.into(p));
             })
             .seq(function () {
                 this(null, Object.keys(this.vars));
@@ -31,7 +31,11 @@ function find (base, cb) {
                 else {
                     em.emit('path', file, stat);
                     
-                    if (stat.isDirectory()) {
+                    if (stat.isSymbolicLink()) {
+                        em.emit('link', file, stat);
+                        this(null);
+                    }
+                    else if (stat.isDirectory()) {
                         em.emit('directory', file, stat);
                         finder(file, this);
                     }
@@ -48,15 +52,21 @@ function find (base, cb) {
         ;
     }
     
-    fs.stat(base, function (err, s) {
+    fs.lstat(base, function (err, s) {
         if (err) {
             em.emit('error', err);
         }
-        else if (s.isDirectory()) {
+        if (s.isDirectory()) {
             finder(base, em.emit.bind(em, 'end'));
         }
+        else if (s.isSymbolicLink()) {
+            if (cb) cb(base, s);
+            em.emit('link', base, s);
+            em.emit('end');
+        }
         else {
-            em.emit('file', base);
+            if (cb) cb(base, s);
+            em.emit('file', base, s);
             em.emit('end');
         }
     });
@@ -65,7 +75,7 @@ function find (base, cb) {
 };
 
 exports.findSync = function findSync (dir, cb) {
-    var rootStat = fs.statSync(dir);
+    var rootStat = fs.lstatSync(dir);
     if (!rootStat.isDirectory()) {
         if (cb) cb(dir, rootStat);
         return [dir];
@@ -73,7 +83,7 @@ exports.findSync = function findSync (dir, cb) {
     
     return fs.readdirSync(dir).reduce(function (files, file) {
         var p = dir + '/' + file;
-        var stat = fs.statSync(p);
+        var stat = fs.lstatSync(p);
         if (cb) cb(p, stat);
         files.push(p);
         
