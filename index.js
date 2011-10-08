@@ -1,10 +1,15 @@
 var fs = require('fs');
+var path = require('path');
 var EventEmitter = require('events').EventEmitter;
 var Seq = require('seq');
 
 exports = module.exports = find;
 exports.find = find;
-function find (base, cb) {
+function find (base, options, cb) {
+    cb = arguments[arguments.length - 1];
+    if (typeof(cb) !== 'function') {
+      cb = undefined;
+    }
     var em = new EventEmitter;
     var inodes = {};
     
@@ -33,7 +38,20 @@ function find (base, cb) {
                     
                     if (stat.isSymbolicLink()) {
                         em.emit('link', file, stat);
-                        this(null);
+                        if (options && options.follow_symlinks) {
+                          path.exists(file, function(exists) {
+                            if (exists) {
+                              fs.readlink(file, function(err, resolvedPath) {
+                                if (err) {
+                                } else {
+                                  finder(path.resolve(path.dir(file), resolvedPath));
+                                }
+                              });
+                            }
+                          });
+                        } else {
+                          this(null);
+                        }
                     }
                     else if (stat.isDirectory()) {
                         em.emit('directory', file, stat);
