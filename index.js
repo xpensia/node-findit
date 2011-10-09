@@ -3,15 +3,27 @@ var path = require('path');
 var EventEmitter = require('events').EventEmitter;
 var Seq = require('seq');
 
+function createInodeChecker() {
+    var inodes = {};
+    return function inodeSeen(inode) {
+        if (inodes[inode]) {
+            return true;
+        } else {
+            inodes[inode] = true;
+            return false;
+        }
+    }
+}
+
 exports = module.exports = find;
 exports.find = find;
 function find (base, options, cb) {
     cb = arguments[arguments.length - 1];
     if (typeof(cb) !== 'function') {
-      cb = undefined;
+        cb = undefined;
     }
     var em = new EventEmitter;
-    var inodes = {};
+    var inodeSeen = createInodeChecker();
     
     function finder (dir, f) {
         Seq()
@@ -29,7 +41,7 @@ function find (base, options, cb) {
                 var stat = this.vars[file];
                 if (cb) cb(file, stat);
                 
-                if (inodes[stat.ino]) {
+                if (inodeSeen(stat.ino)) {
                     // already seen this inode, probably a recursive symlink
                     this(null);
                 }
@@ -43,6 +55,7 @@ function find (base, options, cb) {
                             if (exists) {
                               fs.readlink(file, function(err, resolvedPath) {
                                 if (err) {
+                                  em.emit('error', err);
                                 } else {
                                   finder(path.resolve(path.dir(file), resolvedPath));
                                 }
@@ -61,8 +74,6 @@ function find (base, options, cb) {
                         em.emit('file', file, stat);
                         this(null);
                     }
-                    
-                    inodes[stat.ino] = true;
                 }
             })
             .seq(f.bind({}, null))
@@ -92,25 +103,40 @@ function find (base, options, cb) {
     return em;
 };
 
-exports.findSync = function findSync (dir, cb) {
-    var rootStat = fs.lstatSync(dir);
-    if (!rootStat.isDirectory()) {
-        if (cb) cb(dir, rootStat);
-        return [dir];
+exports.findSync = function findSync(dir, options, callback) {
+    cb = arguments[arguments.length - 1];
+    if (typeof(cb) !== 'function') {
+        cb = undefined;
     }
-    
-    return fs.readdirSync(dir).reduce(function (files, file) {
-        var p = dir + '/' + file;
-        var stat = fs.lstatSync(p);
-        if (cb) cb(p, stat);
-        files.push(p);
-        
-        if (stat.isDirectory()) {
-            files.push.apply(files, findSync(p, cb));
+    var inodeSeen = createInodeChecker();
+    var files = [];
+    var fileQueue = [];
+    var processFile = function processFile(file) {
+        var stat = fs.lstatSync(file);
+        if (inodeSeen(stat.ino)) {
+            return;
         }
-        
-        return files;
-    }, []);
+        files.push(file);
+        cb && cb(file, stat)
+        if (stat.isDirectory()) {
+            fs.readdirSync(file).forEach(function(f) { fileQueue.push(path.join(file, f)); });
+        } else if (stat.isSymbolicLink()) {
+            if (options && options.follow_symlinks && path.existsSync(file)) {
+                fileQueue.push(fs.realpathSync(file));
+            }
+        }
+    };
+    /* we don't include the starting directory unless it is a file */
+    var stat = fs.lstatSync(dir);
+    if (stat.isDirectory()) {
+        fs.readdirSync(dir).forEach(function(f) { fileQueue.push(path.join(dir, f)); });
+    } else {
+        fileQueue.push(dir);
+    }
+    while (fileQueue.length > 0) {
+        processFile(fileQueue.shift());
+    }
+    return files;
 };
 
 exports.find.sync = exports.findSync;

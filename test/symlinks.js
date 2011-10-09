@@ -54,7 +54,20 @@ exports.links = function() {
 exports.follow_links = function() {
     find_helper(__dirname + '/symlinks/dir1', { follow_symlinks: true }, function(data) {
         assert.eql(['cyclic-link-to-dir1', 'dangling-symlink', 'link-to-dir2', 'link-to-file'], data.symlinks);
-        assert.eql(['file', 'file1'], data.files);
+        assert.eql(['file', 'file1', 'file2'], data.files);
         assert.eql(['dir1', 'dir2'], data.dirs);
     });
 };
+
+exports.links_sync = function() {
+    var files = findit.findSync(__dirname + '/symlinks/dir1', { follow_symlinks: false }).map(path.basename);
+    files.sort();
+    assert.eql(['dangling-symlink', 'file1', 'link-to-dir2', 'link-to-file'], files);
+};
+
+exports.follow_links_sync = function() {
+    var files = findit.findSync(__dirname + '/symlinks/dir1', { follow_symlinks: true }).map(path.basename);
+    files.sort();
+    assert.eql(['cyclic-link-to-dir1', 'dangling-symlink', 'dir1', 'dir2', 'file', 'file1', 'file2', 'link-to-dir2', 'link-to-file'], files);
+};
+
