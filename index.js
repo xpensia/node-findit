@@ -3,6 +3,10 @@ var path = require('path');
 var EventEmitter = require('events').EventEmitter;
 var Seq = require('seq');
 
+// allow exists and existsSync to work in Node 0.8+ (fs) and prior (path)
+var exists = (fs.exists) ? fs.exists : path.exists; // node 0.8 moved to fs
+var existsSync = (fs.existsSync) ? fs.existsSync : path.existsSync; // node 0.8 moved to fs
+
 function createInodeChecker() {
     var inodes = {};
     return function inodeSeen(inode) {
@@ -51,7 +55,7 @@ function find (base, options, cb) {
                     if (stat.isSymbolicLink()) {
                         em.emit('link', file, stat);
                         if (options && options.follow_symlinks) {
-                          path.exists(file, function(exists) {
+                          exists(file, function(exists) {
                             if (exists) {
                               fs.readlink(file, function(err, resolvedPath) {
                                 if (err) {
@@ -121,7 +125,7 @@ exports.findSync = function findSync(dir, options, callback) {
         if (stat.isDirectory()) {
             fs.readdirSync(file).forEach(function(f) { fileQueue.push(path.join(file, f)); });
         } else if (stat.isSymbolicLink()) {
-            if (options && options.follow_symlinks && path.existsSync(file)) {
+            if (options && options.follow_symlinks && existsSync(file)) {
                 fileQueue.push(fs.realpathSync(file));
             }
         }
