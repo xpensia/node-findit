@@ -61,7 +61,7 @@ function find (base, options, cb) {
                                 if (err) {
                                   em.emit('error', err);
                                 } else {
-                                  finder(path.resolve(path.dir(file), resolvedPath));
+                                  finder(path.resolve(path.dirname(file), resolvedPath));
                                 }
                               });
                             }
