@@ -55,13 +55,14 @@ function find (base, options, cb) {
                     if (stat.isSymbolicLink()) {
                         em.emit('link', file, stat);
                         if (options && options.follow_symlinks) {
+                          var cb = this;
                           exists(file, function(exists) {
                             if (exists) {
                               fs.readlink(file, function(err, resolvedPath) {
                                 if (err) {
                                   em.emit('error', err);
                                 } else {
-                                  finder(path.resolve(path.dirname(file), resolvedPath));
+                                  finder(path.resolve(path.dirname(file), resolvedPath), cb);
                                 }
                               });
                             }
